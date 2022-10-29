@@ -1,13 +1,16 @@
 import os
+from flask import Flask, request
 from dotenv import load_dotenv
 import requests
 import telebot as tb
 import prettytable as pt
 
+server = Flask(__name__)
 load_dotenv()
 
-APY_KEY = os.getenv('API_KEY')
-bot = tb.TeleBot(APY_KEY);
+API_KEY = os.getenv('API_KEY')
+HOST = os.getenv('HOST');
+bot = tb.TeleBot(API_KEY);
 
 @bot.message_handler(commands=['alive'])
 def test(message):
@@ -28,4 +31,24 @@ def get_classifica(message):
     bot.send_message(message.chat.id, "Ecco la classifica:")
     bot.send_message(message.chat.id, f"<pre>{classifica}</pre>", parse_mode='html')
 
-bot.infinity_polling()
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
+
+@server.route('/' + API_KEY, methods=['POST'])
+def getMessage():
+    json_string = request.get_data().decode('utf-8')
+    update = tb.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
+
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url='https://your_heroku_project.com/' + API_KEY)
+    return "!", 200
+
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))

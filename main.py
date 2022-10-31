@@ -63,7 +63,7 @@ def get_calendario(message):
     data = res.json();
 
     res_message = "Calendario <b>Oratorio Santa Valeria</b>:\n\n"
-    calendar_table = pt.PrettyTable(['VS', "DATA/ORA"], max_width = 15)
+    calendar_table = pt.PrettyTable(['VS', "DATA/ORA"], max_width = 10)
     calendar_table.hrules = pt.ALL
 
     for row in data:

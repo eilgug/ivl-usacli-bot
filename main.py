@@ -42,12 +42,17 @@ def getMessage():
     bot.process_new_updates([update])
     return "!", 200
 
-
 @server.route("/")
 def webhook():
     bot.remove_webhook()
     bot.set_webhook(url=HOST + API_KEY)
     return "!", 200
+
+@server.route("/stop")
+def stop_webhook():
+    bot.remove_webhook()
+    bot.close()
+    return "Bot stopped", 200
 
 
 if __name__ == "__main__":

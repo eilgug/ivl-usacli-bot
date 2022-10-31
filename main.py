@@ -40,7 +40,7 @@ def get_next_match(message):
     res = requests.get(f"https://ivl.usacli.it/PartiteData?girone_id=158&territorio_id=3&campionato_id=81&inizio_stagione={from_today}&fine_stagione=2023-08-31T00:00:00.000Z&societa_id=null&squadra_id={id_squadra}&pubblicato=1")
     data = res.json();
 
-    next_match_team = pt.PrettyTable(['CASA','OSPITI'], max_width=15)
+    next_match_team = pt.PrettyTable(['CASA','OSPITI'], max_width=10)
     next_match_team.add_row([data[0]['SquadraCasa'], data[0]['SquadraOspite']])
 
     res_message = f"<pre>{next_match_team}</pre>\n\n"

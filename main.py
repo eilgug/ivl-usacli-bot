@@ -1,26 +1,32 @@
 import os
-from flask import Flask, request
-from dotenv import load_dotenv
-import requests
 import telebot as tb
 import prettytable as pt
+from dotenv import load_dotenv
 from datetime import date, datetime
+from ivl_services import IVLServices
+
+from flask import Flask, request
+from api import blueprint
 
 server = Flask(__name__)
-load_dotenv()
+server.register_blueprint(blueprint)
 
+load_dotenv()
 API_KEY = os.getenv('API_KEY')
 HOST = os.getenv('HOST');
 bot = tb.TeleBot(API_KEY);
 
 @bot.message_handler(commands=['alive'])
 def test(message):
-    bot.reply_to(message, "Hey! Sono vivo!");
+    bot.send_message(message, "Hey! Sono vivo!");
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message, 'Ciao, ' + message.from_user.first_name + '!')
 
 @bot.message_handler(commands=['classifica'])
 def get_classifica(message):
-    res = requests.get("https://ivl.usacli.it/Classifica/158?_a=&inizio_stagione=2022-09-01T00:00:00.000Z&fine_stagione=2023-08-31T00:00:00.000Z")
-    data = res.json()
+    data = IVLServices.get_classifica()
 
     classifica = pt.PrettyTable(['Squadra', 'Pts'], max_width=15)
     classifica.hrules = pt.ALL
@@ -37,8 +43,7 @@ def get_next_match(message):
     id_squadra = 509 #santa valeria
     from_today = date.today()
 
-    res = requests.get(f"https://ivl.usacli.it/PartiteData?girone_id=158&territorio_id=3&campionato_id=81&inizio_stagione={from_today}&fine_stagione=2023-08-31T00:00:00.000Z&societa_id=null&squadra_id={id_squadra}&pubblicato=1")
-    data = res.json();
+    data = IVLServices.get_calendar(from_today, id_squadra)
 
     next_match_team = pt.PrettyTable(['CASA','OSPITI'], max_width=10)
     next_match_team.add_row([data[0]['SquadraCasa'], data[0]['SquadraOspite']])
@@ -52,15 +57,16 @@ def get_next_match(message):
 
     print(next_match_team)
     bot.send_message(message.chat.id, res_message, parse_mode='html')
+
     print(f"LAT:{data[0]['Palestra_lat']} | LONG: {data[0]['Palestra_long']}")
     bot.send_location(message.chat.id, data[0]['Palestra_lat'],data[0]['Palestra_long'])
 
 @bot.message_handler(commands=['calendario'])
 def get_calendario(message):
     id_squadra = 509
+    date_from = '2022-09-01T00:00:00.000Z'
 
-    res = requests.get(f"https://ivl.usacli.it/PartiteData?girone_id=158&territorio_id=3&campionato_id=81&inizio_stagione=2022-10-29T00:00:00.000Z&fine_stagione=2023-08-31T00:00:00.000Z&societa_id=null&squadra_id={id_squadra}&pubblicato=1")
-    data = res.json();
+    data = IVLServices.get_calendar(date_from, id_squadra)
 
     res_message = "Calendario <b>Oratorio Santa Valeria</b>:\n\n"
     calendar_table = pt.PrettyTable(['VS', "DATA/ORA"], max_width = 10)
@@ -80,10 +86,6 @@ def get_calendario(message):
 
     print(res_message)
     bot.send_message(message.chat.id, res_message, parse_mode='html')
-
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
 
 # ---API---
 
@@ -109,4 +111,3 @@ def stop_webhook():
 
 if __name__ == "__main__":
     server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
-    #bot.infinity_polling()

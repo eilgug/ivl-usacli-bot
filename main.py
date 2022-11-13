@@ -1,5 +1,9 @@
 import os
 import telebot as tb
+import callback_handler as ch
+from telebot import types
+from telebot.types import InlineKeyboardButton
+from telebot.callback_data import *
 import prettytable as pt
 from dotenv import load_dotenv
 from datetime import date, datetime
@@ -11,32 +15,48 @@ from api import blueprint
 server = Flask(__name__)
 server.register_blueprint(blueprint)
 
+ivl_service = IVLServices()
+
 load_dotenv()
 API_KEY = os.getenv('API_KEY')
 HOST = os.getenv('HOST');
 bot = tb.TeleBot(API_KEY);
 
+
 @bot.message_handler(commands=['alive'])
 def test(message):
-    bot.send_message(message, "Hey! Sono vivo!");
+    bot.send_message(message.chat.id, "Hey! Sono vivo!");
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message, 'Ciao, ' + message.from_user.first_name + '!')
+    bot.send_message(message.chat.id, 'Ciao, ' + message.from_user.first_name + '!')
+
 
 @bot.message_handler(commands=['classifica'])
 def get_classifica(message):
-    data = IVLServices.get_classifica()
+    territory_data = ivl_service.get_territory()
 
-    classifica = pt.PrettyTable(['Squadra', 'Pts'], max_width=15)
-    classifica.hrules = pt.ALL
-    for row in data:
-        classifica.add_row([row['name'], row['Punteggio']])
+    options = {}
+    for territory in territory_data:
+        callback_data = f"classifica|territory|{territory['id']}"
+        options[territory['name']] = {'callback_data' : callback_data}
 
-    print(classifica)
+    reply_markup = tb.util.quick_markup(options, 2)
+    bot.send_message(message.chat.id, "Che classifica vuoi conoscere?", reply_markup=reply_markup)
 
-    bot.send_message(message.chat.id, "Ecco la classifica:")
-    bot.send_message(message.chat.id, f"<pre>{classifica}</pre>", parse_mode='html')
+# --- OLD ---
+
+# esegue le query inline
+@bot.inline_handler(func=lambda query: query.query == 'test')
+def query(inline_query):
+    print("asdas")
+
+@bot.chosen_inline_handler(func=lambda chosen_inline_result: '1')
+def test_chosen(chosen_inline_result):
+    print("asdadf")
+
+#@bot.callback_query_handler(func=lambda call: call.data)
 
 @bot.message_handler(commands=['nextmatch'])
 def get_next_match(message):
@@ -87,6 +107,8 @@ def get_calendario(message):
     print(res_message)
     bot.send_message(message.chat.id, res_message, parse_mode='html')
 
+
+
 # ---API---
 
 @server.route('/' + API_KEY, methods=['POST'])
@@ -110,4 +132,7 @@ def stop_webhook():
 
 
 if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    bot.register_callback_query_handler(callback=ch.callback_leaderboard, func=lambda call: str(call.data).split(sep='|')[0] == 'classifica', pass_bot=True )
+    bot.delete_webhook()
+    bot.infinity_polling()
+    #server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))

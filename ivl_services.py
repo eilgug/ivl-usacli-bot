@@ -2,14 +2,81 @@ import requests
 
 class IVLServices():
 
-    _base_url = ""
+    def __init__(self):
+        self._base_url: str = 'https://ivl.usacli.it/'
 
-    def get_classifica():
-        res = requests.get("https://ivl.usacli.it/Classifica/158?_a=&inizio_stagione=2022-09-01T00:00:00.000Z&fine_stagione=2023-08-31T00:00:00.000Z")
-        data = res.json()
-        return data;
+    def _call_api(self, api: str, payload = None):
+        res = requests.get(api, params=payload)
+        return res.json();
 
-    def get_calendar(from_data, id_squadra = None):
-        res = requests.get(f"https://ivl.usacli.it/PartiteData?girone_id=158&territorio_id=3&campionato_id=81&inizio_stagione={from_data}&fine_stagione=2023-08-31T00:00:00.000Z&societa_id=null&squadra_id={id_squadra}&pubblicato=1")
-        data = res.json();
-        return data
+    def get_territory(self):
+        """
+        Call 'ListaTerritoriPubblica' api
+
+        @return: List of territory
+        @rtype: json
+        """
+        api: str = self._base_url + 'ListaTerritoriPubblica'
+        return self._call_api(api)
+
+    def get_championship(self, territory: int, season_start = None, season_end = None):
+        """Return championship list and data filtered by territory"""
+        api: str = self._base_url + 'CampionatiData'
+
+        payload = {
+            "territorio_id" : territory,
+            "inizio_stagione" : season_start,
+            "fine_stagione" : season_end,
+        }
+
+        return self._call_api(api, payload)
+
+    def get_groups(self, championship: int, territory: int = None, season_start = None, season_end = None, returnall:int = 1):
+        """Return all groups filtered by championship"""
+        api: str = self._base_url + 'GironiData'
+
+        payload = {
+            "territorio_id" : territory,
+            "campionato_id" : championship,
+            "inizio_stagione" : season_start,
+            "fine_stagione" : season_end,
+            "returnall" : returnall
+        }
+
+        return self._call_api(api, payload)
+
+    def get_teams(self, championship: int):
+        """Return teams registered to a championship"""
+        api: str = self._base_url + 'SquadreIscritteACampionato/' + championship
+
+        return self._call_api(api)
+
+    def get_leaderboard(self, group: int, season_start = None, season_end = None):
+        """Return leaderboard filtered by group_id"""
+        api: str = self._base_url + 'Classifica/' + group
+
+        payload = {
+            "inizio_stagione" : season_start,
+            "fine_stagione" : season_end,
+        }
+
+        return self._call_api(api, payload)
+
+    # TODO: reduce number of params pass to function (maybe pass **args or a dict)
+    def get_calendar(self, territory: int, championship: int, group: int, team: int, societa: int = None, season_start: str = None, season_end: str = None):
+        """Return calendar filtered group_id and team"""
+
+        api: str = self._base_url + 'PartiteData'
+
+        payload = {
+            "territorio_id" : territory,
+            "campionato_id" : championship,
+            "girone_id" : group,
+            "societa_id" : societa,
+            "squadra_id" : team,
+            "inizio_stagione" : season_start,
+            "fine_stagione" : season_end,
+            "pubblicato" : 1,
+        }
+
+        return self._call_api(api, payload)

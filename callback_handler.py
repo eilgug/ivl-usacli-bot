@@ -1,6 +1,9 @@
+import constants as const
+from datetime import date, datetime
 from telebot import types, TeleBot, util as tb_util
 from ivl_services import IVLServices
-from rensponse_helper import get_response_table, text_wrapping, PrettyTableColumnAlign
+from rensponse_helper import get_response_table, text_wrapping
+
 
 def callback_leaderboard(call : types.CallbackQuery, bot: TeleBot):
     """
@@ -18,27 +21,27 @@ def callback_leaderboard(call : types.CallbackQuery, bot: TeleBot):
     ivl_service = IVLServices()
     call_data = call.data.split("|")
 
-    if call_data[1] == 'territory':
+    if call_data[1] == const.steps[const.TERRITORY]:
         championship_data = ivl_service.get_championship(territory=call_data[2])
         options = {}
         for championship in championship_data:
-            callback_data = f"classifica|championship|{championship['id']}"
+            callback_data = f"{const.commands[const.LEADERBOARD]}|{const.steps[const.CHAMPIONSHIP]}|{championship['id']}"
             options[championship['name']] = {'callback_data' : callback_data}
 
         reply_markup = tb_util.quick_markup(options, 2)
         bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=reply_markup)
 
-    if call_data[1] == 'championship':
+    if call_data[1] == const.steps[const.CHAMPIONSHIP]:
         groups_data = ivl_service.get_groups(championship=call_data[2])
         options = {}
         for groups in groups_data:
-            callback_data = f"classifica|group|{groups['id']}"
+            callback_data = f"{const.commands[const.LEADERBOARD]}|{const.steps[const.GROUP]}|{groups['id']}"
             options[groups['name']] = {'callback_data' : callback_data}
 
         reply_markup = tb_util.quick_markup(options, 2)
         bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=reply_markup)
 
-    if call_data[1] == 'group':
+    if call_data[1] == const.steps[const.GROUP]:
         leaderboard = ivl_service.get_leaderboard(group=call_data[2])
         # delete query message
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
@@ -51,3 +54,92 @@ def callback_leaderboard(call : types.CallbackQuery, bot: TeleBot):
 
         leaderboard_table = get_response_table( ['SQUADRA', 'PTS'], data)
         bot.send_message(chat_id=call.message.chat.id, text=leaderboard_table, parse_mode='html')
+
+
+def callback_calendar_nextmatch(call: types.CallbackQuery, bot: TeleBot):
+    ivl_service = IVLServices()
+    call_data = call.data.split("|")
+    command = call_data[0]
+
+    if call_data[1] == const.steps[const.TERRITORY]:
+        territory_id = call_data[2]
+        championship_data = ivl_service.get_championship(territory=territory_id)
+        extra_args = {"territory" : territory_id}
+        options = {}
+        for championship in championship_data:
+            callback_data = f"{command}|{const.steps[const.CHAMPIONSHIP]}|{championship['id']}|{str(extra_args)}"
+            options[championship['name']] = {'callback_data' : callback_data}
+
+        reply_markup = tb_util.quick_markup(options, 2)
+        bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=reply_markup)
+
+    if call_data[1] == const.steps[const.CHAMPIONSHIP]:
+        championship_id = call_data[2]
+        groups_data = ivl_service.get_groups(championship=championship_id)
+        extra_args = eval(call_data[3])
+        extra_args['championship'] = championship_id
+        options = {}
+        for groups in groups_data:
+            callback_data = f"{command}|{const.steps[const.GROUP]}|{groups['id']}|{str(extra_args)}"
+            options[groups['name']] = {'callback_data' : callback_data}
+
+        reply_markup = tb_util.quick_markup(options, 2)
+        bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=reply_markup)
+
+    if call_data[1] == const.steps[const.GROUP]:
+        group_id = call_data[2]
+        extra_args = eval(call_data[3])
+        extra_args['group'] = group_id
+        teams_data = ivl_service.get_teams(championship=extra_args['championship'])
+        options = {}
+        for teams in teams_data:
+            callback_data = f"{command}|{const.steps[const.TEAMS]}|{teams['id']}|{str(extra_args)}"
+            options[teams['name']] = {'callback_data' : callback_data}
+
+        reply_markup = tb_util.quick_markup(options, 2)
+        bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.id, reply_markup=reply_markup)
+
+    if call_data[1] == const.steps[const.TEAMS]:
+        team_id = call_data[2]
+        extra_args = eval(call_data[3])
+        today = None
+        if command == const.commands[const.NEXT_MATCH]:
+            today = date.today()
+
+        calendar = ivl_service.get_calendar(championship=extra_args['championship'], territory=extra_args['territory'], group=extra_args['group'], team=team_id, season_start=today)
+
+        # delete query message
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
+        # return calendar
+        if command == const.commands[const.CALENDAR]:
+            data = []
+            name = ""
+            for row in calendar:
+                d = datetime.strptime(row['DataGioco'], "%Y-%m-%d %H:%M:%S")
+                hour = d.strftime('%H:%M')
+                day = d.strftime('%d/%m/%y')
+
+                if row['squadra_casa_id'] == int(team_id):
+                    name = row['SquadraOspite']
+
+                if row['squadra_ospite_id'] == int(team_id):
+                    name = row['SquadraCasa']
+
+                data.append( [ name, f"{day}\n{hour}"] )
+
+            calendar_table = get_response_table( ['VS', 'DATA/ORA'], data, max_width=10)
+            bot.send_message(chat_id=call.message.chat.id, text=calendar_table, parse_mode='html')
+
+        if command == const.commands[const.NEXT_MATCH]:
+            next_match_data = calendar[0]
+
+            data = [[next_match_data['SquadraCasa'], next_match_data['SquadraOspite']]]
+            res_message = get_response_table( ['CASA', 'OSPITI'], data, max_width=10)
+
+            d = datetime.strptime(next_match_data['DataGioco'], "%Y-%m-%d %H:%M:%S")
+            hour = d.strftime('%H:%M')
+            day = d.strftime('%d/%m/%Y')
+            res_message += f"\n\n<b>Data:</b> {day} | <b>Ora:</b> {hour}"
+
+            bot.send_message(call.message.chat.id, res_message, parse_mode='html')
+            bot.send_location(call.message.chat.id, next_match_data['Palestra_lat'], next_match_data['Palestra_long'])

@@ -1,4 +1,6 @@
 import requests
+from datetime import date
+
 
 class IVLServices():
 
@@ -67,6 +69,12 @@ class IVLServices():
         """Return calendar filtered group_id and team"""
 
         api: str = self._base_url + 'PartiteData'
+
+        current_year = date.today().year
+        if season_end is None:
+            season_end = f"{current_year + 1}-08-31"
+        if season_start is None:
+            season_start = f"{current_year}-09-01"
 
         payload = {
             "territorio_id" : territory,

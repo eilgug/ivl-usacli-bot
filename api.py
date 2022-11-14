@@ -1,9 +1,9 @@
-# from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request
 # from ivl_services import IVLServices
 # from datetime import date, datetime
 # import prettytable as pt
 
-# blueprint = Blueprint('api', __name__)
+blueprint = Blueprint('api', __name__)
 
 # @blueprint.route("/classifica", methods = ['GET'])
 # def get_classifica():

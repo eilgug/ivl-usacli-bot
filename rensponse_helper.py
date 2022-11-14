@@ -2,7 +2,7 @@ import prettytable as pt
 import textwrap
 from typing import List, Optional
 
-_MAX_WIDTH = 18
+_MAX_WIDTH = 15
 
 class PrettyTableColumnAlign():
 
@@ -17,6 +17,7 @@ class PrettyTableColumnAlign():
 def get_response_table(
     headers: List[str],
     data: List[List[str]],
+    max_width: Optional[int] = _MAX_WIDTH,
     column_align: Optional[List[PrettyTableColumnAlign]] = None) -> str:
     """
     Build a data table.
@@ -27,12 +28,11 @@ def get_response_table(
         - column_align : array( :PrettyTableColumnAlign ) = None
     """
 
-    table = pt.PrettyTable(headers, max_width=_MAX_WIDTH)
+    table = pt.PrettyTable(headers, max_width=max_width)
 
-    table.border = False
+    table.border = True
     table.preserve_internal_border = True
-    table.vrules = pt.NONE
-    table.hrules = pt.HEADER
+    table.hrules = pt.ALL
 
     if column_align is not None:
         for col_align in column_align:
@@ -44,7 +44,7 @@ def get_response_table(
 
     return res_table
 
-def text_wrapping(text: str, placholder: Optional[str] = "...") -> str:
+def text_wrapping(text: str, max_width: Optional[int] = _MAX_WIDTH, placholder: Optional[str] = "...") -> str:
     """
     Wrap text if to long
 
@@ -52,4 +52,4 @@ def text_wrapping(text: str, placholder: Optional[str] = "...") -> str:
         - text : str
         - placeholder : str = "..."
     """
-    return textwrap.shorten(text, width=_MAX_WIDTH, placeholder=placholder)
+    return textwrap.shorten(text, width=max_width, placeholder=placholder)

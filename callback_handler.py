@@ -16,6 +16,7 @@ def callback_leaderboard(call : types.CallbackQuery, bot: TeleBot):
     @params:
         - call : CallbackQuery
             - data : str => "classifica|<step>|id"
+        - bot : Telebot => Injected from register_callback_handler
     """
 
     ivl_service = IVLServices()
@@ -57,6 +58,20 @@ def callback_leaderboard(call : types.CallbackQuery, bot: TeleBot):
 
 
 def callback_calendar_nextmatch(call: types.CallbackQuery, bot: TeleBot):
+    """
+    Handle all step to get calendar or the next match.
+    STEP:
+        - territory
+        - championship
+        - group (if is only one return the leaderboard)
+        - team
+
+    @params:
+        - call : CallbackQuery
+            - data : str => "classifica|<step>|id|extra_args"
+        - bot : Telebot => Injected from register_callback_handler
+    """
+
     ivl_service = IVLServices()
     call_data = call.data.split("|")
     command = call_data[0]
@@ -110,7 +125,7 @@ def callback_calendar_nextmatch(call: types.CallbackQuery, bot: TeleBot):
 
         # delete query message
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
-        # return calendar
+        # return calendar/nextmatch
         if command == const.commands[const.CALENDAR]:
             data = []
             name = ""

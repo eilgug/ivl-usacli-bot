@@ -88,5 +88,5 @@ if __name__ == "__main__":
     bot.register_callback_query_handler(callback=ch.callback_leaderboard, func=lambda call: str(call.data).split(sep='|')[0] == const.commands[const.LEADERBOARD], pass_bot=True )
     bot.register_callback_query_handler(callback=ch.callback_calendar_nextmatch, func=lambda call: str(call.data).split(sep='|')[0] in [const.commands[const.CALENDAR], const.commands[const.NEXT_MATCH]], pass_bot=True )
 
-    #server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
-    bot.infinity_polling()
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    #bot.infinity_polling()

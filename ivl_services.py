@@ -11,7 +11,7 @@ class IVLServices():
         res = requests.get(api, params=payload)
         return res.json();
 
-    def get_territory(self):
+    def get_territory(self, id: int = None):
         """
         Call 'ListaTerritoriPubblica' api
 
@@ -19,9 +19,16 @@ class IVLServices():
         @rtype: json
         """
         api: str = self._base_url + 'ListaTerritoriPubblica'
-        return self._call_api(api)
+        territories = self._call_api(api)
 
-    def get_championship(self, territory: int, season_start = None, season_end = None):
+        if id is None:
+            return territories
+        else:
+            for territory in territories:
+                if territory["id"] == id:
+                    return territory
+
+    def get_championship(self, territory: int, season_start = None, season_end = None, id: int = None):
         """Return championship list and data filtered by territory"""
         api: str = self._base_url + 'CampionatiData'
 
@@ -31,9 +38,16 @@ class IVLServices():
             "fine_stagione" : season_end,
         }
 
-        return self._call_api(api, payload)
+        championships = self._call_api(api, payload)
 
-    def get_groups(self, championship: int, territory: int = None, season_start = None, season_end = None, returnall:int = 1):
+        if id is None:
+            return championships
+        else:
+            for championship in championships:
+                if championship["id"] == id:
+                    return championship
+
+    def get_groups(self, championship: int, territory: int = None, season_start = None, season_end = None, returnall: int = 1, id: int = None):
         """Return all groups filtered by championship"""
         api: str = self._base_url + 'GironiData'
 
@@ -45,13 +59,27 @@ class IVLServices():
             "returnall" : returnall
         }
 
-        return self._call_api(api, payload)
+        groups = self._call_api(api, payload)
 
-    def get_teams(self, championship: int):
+        if id is None:
+            return groups
+        else:
+            for group in groups:
+                if group["id"] == id:
+                    return group
+
+    def get_teams(self, championship: int, id: int = None):
         """Return teams registered to a championship"""
         api: str = self._base_url + 'SquadreIscritteACampionato/' + championship
 
-        return self._call_api(api)
+        teams = self._call_api(api)
+
+        if id is None:
+            return teams
+        else:
+            for team in teams:
+                if team["id"] == id:
+                    return team
 
     def get_leaderboard(self, group: int, season_start = None, season_end = None):
         """Return leaderboard filtered by group_id"""

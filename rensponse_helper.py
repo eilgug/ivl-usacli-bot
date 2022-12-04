@@ -53,3 +53,9 @@ def text_wrapping(text: str, max_width: Optional[int] = _MAX_WIDTH, placholder: 
         - placeholder : str = "..."
     """
     return textwrap.shorten(text, width=max_width, placeholder=placholder)
+
+def preference_response(territory, championship, group, team):
+    message = f"<b>Territorio: </b> {territory} \n<b>Campionato: </b> {championship} \n<b>Girone: </b> {group} \n<b>Squadra: </b> {team}"
+
+    return message;
+

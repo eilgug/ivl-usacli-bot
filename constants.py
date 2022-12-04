@@ -2,6 +2,7 @@
 LEADERBOARD     = "LEADERBOARD"
 CALENDAR        = "CALENDAR"
 NEXT_MATCH      = "NEXT_MATCH"
+PREFERENCE      = "PREFERENCE"
 
 # STEP
 TERRITORY    = "TERRITORY"
@@ -13,6 +14,7 @@ commands = {
     "LEADERBOARD" : "1",
     "CALENDAR" : "2",
     "NEXT_MATCH" : "3",
+    "PREFERENCE" : "4",
 }
 
 steps = {

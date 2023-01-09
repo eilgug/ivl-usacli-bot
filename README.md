@@ -25,5 +25,7 @@
 
 `/preferenze` ⇒ Give you possibility to set your favourite *territory*, *championship*, *group* and *team* so you don't have to select them every time.
 
+> If there're no preference set everytime you need the select all data
+
 _made by [@eilgug](https://github.com/eilgug)_
 _more info [here](https://eilgug.notion.site/IVL-US-ACLI-BOT-e2dbe44d4e35491f940e70a9ddc519c1)
